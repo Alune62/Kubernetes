@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-avec-configmap
+spec:
+  containers:
+  - name: conteneur-web
+    image: nginx:alpine
+    env:
+    - name: MON_ENV
+      valueFrom:
+        configMapKeyRef:
+          name: ma-config-app # Nom de la ConfigMap
+          key: APP_ENV       # Clé à récupérer dans la ConfigMap

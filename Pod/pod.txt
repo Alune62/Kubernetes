@@ -1,0 +1,11 @@
+1 Pod = 1 instance de ton application.
+
+Un pod peut contenir un ou plusieurs conteneurs. Ces conteneurs se partage le même stockage et le même réseau
+
+Un Pod tout seul (sans Deployment) a une vie très simple :
+
+Si tu le supprimes, il disparaît définitivement.
+
+Si le nœud (la machine) plante, Kubernetes ne le réassocie pas tout seul.
+
+C'est pour cela qu'on apprend d'abord à écrire des Pods parfaits avant de les confier à un Deployment !

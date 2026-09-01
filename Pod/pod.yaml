@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mon-pod
+  labels:
+    app: mon_app
+spec:
+  containers:
+  - name: mon-conteneur
+    image: nginx:alpine
+    ports:
+    - containerPort: 80
+
+
+# ---------------------------------------------------
+# DÉCLARATION DES VARIABLES D'ENVIRONNEMENT
+# ---------------------------------------------------
+
+    env:
+     - name: APP_ENV
+       value: "development"
+     - name: DB_HOST
+       value: "localhost"
