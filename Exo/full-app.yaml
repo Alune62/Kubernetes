@@ -1,0 +1,55 @@
+#Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: auth-secret
+type: Opaque
+data:
+  JWT_SECRET: c3VwZXJfc2VjcmV0X2p3dF9rZXk=
+
+---
+
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: global-config
+data:
+  APP_LOG_LEVEL: "debug"
+  FEATURE_FLAG: "enabled"
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-deployment
+  labels:
+    app: web-app
+    tier: frontend
+spec:
+  replicas: 4
+  selector:
+        matchLabels:
+           app: web-app
+  template:
+     metadata:
+        labels:
+           app: web-app
+           tier: frontend
+     spec:
+       containers:
+         - name: web-server
+           image: nginx:alpine
+           envFrom:
+           - configMapRef:
+              name: global-config
+        # 2. On injecte la clé spécifique du Secret en la renommant
+           env:
+            - name: AUTH_KEY
+              valueFrom:
+                 secretKeyRef:
+                    name: auth-secret
+                    key: JWT_SECRET
+                   
+      
