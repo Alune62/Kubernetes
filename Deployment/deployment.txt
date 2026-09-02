@@ -1,0 +1,105 @@
+Un Pod seul est éphémère. Si le nœud plante ou si le Pod est supprimé, il ne revient pas.
+C'est le rôle du Deployment d'orchestrer et de maintenir le nombre de Pods souhaité.
+
+Décortiquons la logique d'un Deployment
+
+apiVersion: apps/v1 : Pour les Deployments, la version de l'API est apps/v1 (et non pas v1 comme pour le Pod).
+
+replicas: 3 : C'est la consigne donnée à Kubernetes ("Garde constamment 3 Pods en vie").
+
+selector.matchLabels : Le Deployment utilise ce filtre pour surveiller ses Pods.
+
+template: : C'est la recette du Pod ! Tout ce qui est sous template est exactement la structure d'un pod.yaml classique (metadata + spec).
+
+############################################################################################################################################
+
+# AUTO-REPARATION (SELF-HEALING)
+
+C'est l'un des comportements les plus puissants de Kubernetes à observer !
+
+Le Deployment veille en permanence sur l'état du cluster. Si tu as défini replicas: 3, son seul objectif est de s'assurer qu'il y a toujours exactement 3 Pods en état de marche.
+
+Voici le guide pas à pas pour tester et observer ce mécanisme d'auto-réparation (Self-Healing).
+
+*Étape 1 : Lister tes Pods actuels
+Ouvre ton terminal dans Codespaces et affiche la liste de tes Pods avec leur nom complet et leur temps d'existence (AGE) :
+
+(kubectl get pods)
+
+ON DOIT OBTENIR 3 Pods en statut running
+
+*Étape 2 : Supprimer l'un des Pods
+Choisis le nom de l'un de tes 3 Pods (par exemple le premier) et supprime-le manuellement avec la commande 
+
+(kubectl delete pod)
+
+*Étape 3 : Observer le remplacement instantané
+Relance immédiatement la commande pour lister les Pods :
+
+(kubectl get pods )
+
+Que s'est-il passé ?
+Le Pod ...-2x84n a été détruit.
+
+Le contrôleur du Deployment a détecté qu'il n'y avait plus que 2 Pods vivants au lieu des 3 demandés.
+
+Il a automatiquement et immédiatement recréé un nouveau Pod (...-k8w1p, qui a un âge de seulement 
+quelques secondes) pour rétablir la consigne !
+
+################################################################################################
+
+# ROLLING UPDATE
+
+La mise à jour sans interruption (appelée Rolling Update) est l'une des fonctionnalités majeures d'un Deployment Kubernetes.
+
+Au lieu de couper tous les Pods d'un coup (ce qui créerait une interruption de service), Kubernetes met à jour les Pods un par un (ou par petits groupes). 
+Il attend que le nouveau Pod soit prêt (Ready) avant de supprimer l'ancien.
+
+# Étape 1 : Observer l'état initial des Pods
+Avant de faire la modification, affichons la liste de nos Pods avec l'option -w (watch) pour suivre les changements en temps réel dans le terminal :
+
+(kubectl get pods -l app=mon-application)
+
+# Étape 2 : Modifier l'image Docker du Deployment
+Imaginons que nous voulions passer de l'image nginx:1.27-alpine à une version spécifique comme nginx:1.26-alpine (ou inversement).
+
+Il existe deux façons de le faire :
+
+* Option A : Modifier le fichier deployment.yaml (Méthode Recommandée / GitOps)
+Ouvre ton fichier deployment.yaml et change la ligne de l'image :
+
+spec:
+      containers:
+      - name: conteneur-nginx
+        image: nginx:1.26-alpine # Nouvelle version de l'image
+        ports:
+        - containerPort: 80
+
+Puis applique la modification : kubectl apply -f deployment.yaml
+
+* Option B : Modifier directement l'image en ligne de commande
+Si tu veux tester rapidement sans toucher au fichier YAML :
+(kubectl set image deployment/mon-deploiement-web conteneur-nginx=nginx:1.26-alpine)
+
+# Étape 3 : Observer le déroulement du Rolling Update
+Pendant ou juste après l'application de la commande, exécute cette commande pour voir la mise à jour en action :
+ (kubectl get pods)
+
+Tu observeras ce comportement progressif :
+
+Kubernetes crée un nouveau Pod avec la nouvelle image (ContainerCreating -> Running).
+
+Dès que le nouveau Pod est prêt, il commence à terminer un ancien Pod (Terminating).
+
+Il répète l'opération jusqu'à ce que les 3 répliques fonctionnent avec la nouvelle version.
+
+# Étape 4 : Vérifier l'historique et le statut du déploiement
+Tu peux suivre la progression officielle de la mise à jour avec :
+
+(kubectl rollout status deployment/mon-deploiement-web)
+
+💡 Le bonus magique : Le Rollback (Retour en arrière)
+Si la nouvelle version de ton image contenait un bug ou ne fonctionnait pas, 
+tu peux annuler la mise à jour et revenir instantanément à la version précédente en une seule commande :
+
+(kubectl rollout undo deployment/mon-deploiement-web)

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mon-deploiement-web
+  labels:
+    app: mon-application
+spec:
+  replicas: 3 # On veut TOUJOURS 3 répliques identiques
+  selector:
+    matchLabels:
+      app: mon-application # Le Deployment cible les Pods avec ce label
+  template:
+    metadata:
+      labels:
+        app: mon-application # Label attribué à chaque Pod créé
+    spec:
+      containers:
+      - name: conteneur-nginx
+        image: nginx:1.27-alpine
+        ports:
+        - containerPort: 80
