@@ -1,0 +1,59 @@
+# Secret
+apiVersion: v1
+kind: Secret
+metadata:
+   name: db-secret
+data:
+   DB_PASSWORD: c3VwZXJfc2VjcmV0X3Bhc3M=
+
+---
+
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata: 
+  name: api-config
+data:
+  NODE_ENV: "production"
+  DB_HOST: "postgres-service"
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-deployment
+  labels:
+    app: backend-api
+spec:
+  replicas: 3
+  selector:
+     matchLabels:
+        app: backend-api
+  template:
+    metadata:
+      labels:
+        app: backend-api    
+    spec:
+      containers:
+         - name: api
+           image: nginx:1.27-alpine
+           ports:
+            - name: http
+              containerPort: 80
+           env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                   name: api-config
+                   key: NODE_ENV
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                   name: api-config
+                   key: DB_HOST
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                   name: db-secret
+                   key: DB_PASSWORD
